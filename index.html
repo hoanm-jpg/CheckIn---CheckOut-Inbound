@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check in/out CTV CSKH</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f4;color:#1c1c1a;min-height:100vh}
+.topbar{background:#fff;border-bottom:0.5px solid #e0dfd8;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px}
+.topbar h1{font-size:15px;font-weight:500}
+.topbar .date{font-size:12px;color:#999}
+@media(max-width:640px){.topbar{height:auto;min-height:56px;padding:8px 1rem;flex-wrap:wrap;gap:4px}.topbar .date{display:none}}
+.container{max-width:780px;margin:0 auto;padding:1.5rem 1.25rem}
+.tabs{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap}
+.tab{padding:7px 16px;border:0.5px solid #d0cfc8;border-radius:8px;background:transparent;cursor:pointer;font-size:13px;color:#666;transition:all .15s}
+.tab.active{background:#fff;color:#1c1c1a;border-color:#999;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.section{display:none}.section.show{display:block}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.1rem}
+.stat-card{background:#fff;border:0.5px solid #e0dfd8;border-radius:10px;padding:.8rem 1rem}
+.stat-num{font-size:22px;font-weight:500}.stat-lbl{font-size:11px;color:#999;margin-top:2px}
+.card{background:#fff;border:0.5px solid #e0dfd8;border-radius:10px;padding:1rem 1.15rem;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.name-badge{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.avatar{width:38px;height:38px;border-radius:50%;background:#e8f0fb;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#2563eb;flex-shrink:0}
+.ctv-name{font-size:14px;font-weight:500}
+.ctv-sub{font-size:11px;color:#999;margin-top:2px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.right-col{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.status-badge{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+.online{background:#dcfce7;color:#16a34a}
+.offline{background:#f3f4f6;color:#6b7280}
+.btn-ci{padding:6px 14px;border-radius:8px;border:0.5px solid #d0cfc8;font-size:13px;cursor:pointer;background:#fff;color:#1c1c1a;white-space:nowrap}
+.btn-ci.in{border-color:#16a34a;color:#16a34a}
+.btn-ci.out{border-color:#dc2626;color:#dc2626}
+.btn-ci:disabled{opacity:.4;cursor:not-allowed}
+.card.late{border-color:#fca5a5;background:#fff8f8}
+.card.early-in{border-color:#86efac;background:#f0fff4}
+.time-tag{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap;display:inline-block;margin-top:3px}
+.tag-red{background:#fee2e2;color:#dc2626}
+.tag-green{background:#dcfce7;color:#16a34a}
+.schedule-badge{font-size:11px;padding:1px 7px;border-radius:20px;background:#dbeafe;color:#1d4ed8;white-space:nowrap}
+.input-row{display:flex;gap:8px;margin-bottom:1rem}
+.search-input{flex:1;height:36px;border-radius:8px;border:0.5px solid #d0cfc8;padding:0 12px;font-size:13px;background:#fff;color:#1c1c1a;outline:none}
+.add-btn{padding:0 16px;height:36px;border-radius:8px;border:0.5px solid #d0cfc8;background:#fff;cursor:pointer;font-size:13px;color:#1c1c1a;white-space:nowrap}
+.log-entry{display:flex;align-items:center;padding:10px 0;border-bottom:0.5px solid #f0ede8;gap:10px}
+.log-entry:last-child{border-bottom:none}
+.log-entry.le-red{background:#fff8f8;margin:0 -1rem;padding:10px 1rem}
+.log-entry.le-green{background:#f0fff4;margin:0 -1rem;padding:10px 1rem}
+.log-name{font-size:13px;font-weight:500}
+.log-time{font-size:11px;color:#999;margin-top:2px}
+.log-type{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500;flex-shrink:0}
+.log-in{background:#dcfce7;color:#16a34a}
+.log-out{background:#fee2e2;color:#dc2626}
+.filter-row{display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap}
+.filter-btn{padding:4px 12px;border-radius:20px;border:0.5px solid #d0cfc8;font-size:12px;cursor:pointer;background:#fff;color:#666}
+.filter-btn.active{background:#fff;color:#1c1c1a;border-color:#999;font-weight:500}
+.del-btn{padding:5px 10px;border-radius:8px;border:0.5px solid #fecaca;font-size:12px;cursor:pointer;background:#fff;color:#dc2626}
+.empty{text-align:center;padding:2rem;color:#bbb;font-size:13px}
+.notice{font-size:11px;color:#bbb;text-align:center;margin-top:1.5rem}
+.loading{text-align:center;padding:2rem;color:#999;font-size:13px}
+.sync-bar{display:flex;align-items:center;gap:8px;font-size:12px;color:#999;margin-bottom:.75rem}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#d1d5db;flex-shrink:0}
+.sync-dot.ok{background:#16a34a}
+.sync-dot.err{background:#dc2626}
+.sync-dot.loading{background:#f59e0b;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:99;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:1.5rem;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.14);max-height:92vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:500;margin-bottom:1rem}
+.modal label{font-size:12px;color:#666;display:block;margin-bottom:4px}
+.modal input[type=text],.modal select{width:100%;height:36px;border:0.5px solid #d0cfc8;border-radius:8px;padding:0 12px;font-size:13px;outline:none;margin-bottom:.8rem;background:#fff;color:#1c1c1a}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem}
+.modal-btns button{padding:6px 16px;border-radius:8px;border:0.5px solid #d0cfc8;font-size:13px;cursor:pointer;background:#fff;color:#1c1c1a}
+.modal-btns .confirm{border-color:#16a34a;color:#16a34a}
+/* Photo */
+.photo-area{width:100%;aspect-ratio:4/3;background:#f5f5f4;border-radius:10px;overflow:hidden;position:relative;margin-bottom:.9rem;border:0.5px solid #e0dfd8}
+.photo-area video,.photo-area img.preview{width:100%;height:100%;object-fit:cover;display:block}
+.photo-area .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#bbb;gap:8px;font-size:13px}
+.cam-btns{display:flex;gap:8px;margin-bottom:.75rem}
+.cam-btn{flex:1;padding:8px;border-radius:8px;border:0.5px solid #d0cfc8;font-size:12px;cursor:pointer;background:#fff;color:#444;text-align:center}
+.cam-btn.primary{border-color:#2563eb;color:#2563eb}
+input[type=file]{display:none}
+.ci-who{font-size:13px;color:#555;margin-bottom:.5rem}
+.shift-info-box{font-size:12px;color:#2563eb;margin-bottom:.75rem;min-height:16px}
+/* Nút xem ảnh trong lịch sử */
+.photo-btn{flex-shrink:0;font-size:11px;padding:3px 9px;border-radius:20px;border:0.5px solid #d0cfc8;background:#fff;color:#444;cursor:pointer}
+.photo-btn:hover{background:#f5f5f4}
+.lb-msg{position:absolute;color:#fff;font-size:14px}
+/* Lightbox */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center}
+.lightbox.open{display:flex}
+.lightbox img{max-width:95vw;max-height:90vh;border-radius:8px}
+.lightbox-close{position:absolute;top:1rem;right:1rem;color:#fff;font-size:28px;cursor:pointer}
+/* Import schedule */
+.import-box textarea{width:100%;min-height:140px;border:0.5px solid #e0dfd8;border-radius:8px;padding:10px 12px;font-size:12px;font-family:monospace;outline:none;resize:vertical;background:#fff;color:#1c1c1a;line-height:1.5;margin-bottom:.75rem}
+.preview-day{margin-bottom:.75rem}
+.preview-day-title{font-size:12px;font-weight:500;color:#666;margin-bottom:.35rem}
+.preview-row{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 0;border-bottom:0.5px solid #f5f5f4}
+.preview-row:last-child{border-bottom:none}
+.preview-shift{color:#2563eb;font-weight:500;width:52px;flex-shrink:0}
+.preview-warn{color:#dc2626;font-size:11px}
+.shift-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid #f0ede8}
+.shift-row:last-child{border-bottom:none}
+.shift-code{font-size:13px;font-weight:500;width:40px;flex-shrink:0}
+.shift-times{font-size:12px;color:#666;flex:1}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Check in/out CTV CSKH</h1>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="sync-bar"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">Đang kết nối...</span></div>
+    <span class="date" id="topdate"></span>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('checkin')">Check in/out</button>
+    <button class="tab" onclick="switchTab('log')">Lịch sử</button>
+    <button class="tab" onclick="switchTab('schedule')">📅 Phân ca</button>
+    <button class="tab" onclick="switchTab('manage')">Quản lý CTV</button>
+  </div>
+
+  <!-- CHECK IN/OUT -->
+  <div id="sec-checkin" class="section show">
+    <div class="stats">
+      <div class="stat-card"><div class="stat-num" id="cnt-online">—</div><div class="stat-lbl">Đang online</div></div>
+      <div class="stat-card"><div class="stat-num" id="cnt-total">—</div><div class="stat-lbl">Tổng CTV</div></div>
+      <div class="stat-card"><div class="stat-num" id="cnt-today">—</div><div class="stat-lbl">Check in hôm nay</div></div>
+    </div>
+    <div class="input-row">
+      <input class="search-input" id="search-ci" placeholder="🔍  Tìm tên CTV..." oninput="renderCheckin()">
+
+    </div>
+    <div id="list-checkin"><div class="loading">Đang tải dữ liệu...</div></div>
+  </div>
+
+  <!-- LỊCH SỬ -->
+  <div id="sec-log" class="section">
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="filterLog('all',this)">Tất cả</button>
+      <button class="filter-btn" onclick="filterLog('in',this)">Check in</button>
+      <button class="filter-btn" onclick="filterLog('out',this)">Check out</button>
+      <button class="filter-btn" onclick="filterLog('issue',this)">⚠️ Bất thường</button>
+      <button class="add-btn" style="margin-left:auto;height:32px;padding:0 14px" onclick="refreshLog()">↻ Làm mới</button>
+    </div>
+    <div class="card"><div id="log-list"><div class="loading">Đang tải...</div></div></div>
+  </div>
+
+  <!-- PHÂN CA -->
+  <div id="sec-schedule" class="section">
+    <div class="card" style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:.6rem">📋 Import lịch từ Google Sheets</div>
+      <div style="font-size:12px;color:#888;margin-bottom:.75rem;line-height:1.6">Bôi đen vùng dữ liệu (3 cột: Ngày · Ca · Tên CTV) → Ctrl+C → paste vào đây</div>
+      <div class="import-box">
+        <textarea id="paste-area" placeholder="Paste dữ liệu từ Google Sheets vào đây..." oninput="previewSchedule()"></textarea>
+      </div>
+      <div id="import-preview"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.5rem">
+        <button class="add-btn" style="height:34px" onclick="clearImport()">Xóa</button>
+        <button class="add-btn" id="btn-apply-import" style="height:34px;border-color:#16a34a;color:#16a34a;display:none" onclick="applySchedule()">✓ Áp dụng</button>
+      </div>
+    </div>
+    <div class="card"><div style="font-size:13px;font-weight:500;margin-bottom:.75rem">Lịch đang áp dụng</div><div id="schedule-display"></div></div>
+  </div>
+
+  <!-- QUẢN LÝ CTV -->
+  <div id="sec-manage" class="section">
+    <div class="input-row">
+      <input class="search-input" id="search-mgr" placeholder="🔍  Tìm CTV..." oninput="renderManage()">
+      <button class="add-btn" onclick="openAddModal()">+ Thêm CTV</button>
+    </div>
+    <div id="list-manage"><div class="loading">Đang tải...</div></div>
+  </div>
+
+  <div class="notice">Dữ liệu đồng bộ với Google Sheets</div>
+</div>
+
+<!-- MODAL THÊM CTV -->
+<div class="modal-bg" id="modal-add">
+  <div class="modal">
+    <h3>Thêm CTV mới</h3>
+    <label>Họ và tên *</label>
+    <input type="text" id="inp-name" placeholder="Nguyễn Thị Lan" />
+    <label>Username (khớp với bảng phân ca) *</label>
+    <input type="text" id="inp-username" placeholder="VD: yenthn" />
+    <label>Email nhận cảnh báo</label>
+    <input type="text" id="inp-email" placeholder="VD: yenthn@gmail.com" />
+    <div class="modal-btns">
+      <button onclick="closeModals()">Hủy</button>
+      <button class="confirm" onclick="addCtv()">Thêm</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CHECK IN -->
+<div class="modal-bg" id="modal-ci">
+  <div class="modal">
+    <h3>📸 Check in minh chứng</h3>
+    <div class="ci-who" id="ci-who-label"></div>
+    <label>Ca làm việc hôm nay *</label>
+    <select id="ci-shift-select" onchange="updateShiftInfo()"></select>
+    <div class="shift-info-box" id="ci-shift-info"></div>
+    <div class="photo-area">
+      <div class="placeholder" id="ph-placeholder">📷 Chưa có ảnh</div>
+      <video id="cam-video" autoplay playsinline style="display:none"></video>
+      <img id="ph-preview" class="preview" style="display:none" />
+    </div>
+    <div class="cam-btns">
+      <button class="cam-btn primary" id="btn-open-cam" onclick="startCamera()">📷 Mở camera</button>
+      <button class="cam-btn" onclick="document.getElementById('inp-file').click()">🖼 Chọn ảnh</button>
+    </div>
+    <input type="file" id="inp-file" accept="image/*" onchange="fileSelected(event)">
+    <button class="cam-btn primary" id="btn-snap" style="display:none;width:100%;margin-bottom:.75rem;padding:10px" onclick="snapPhoto()">📸 Chụp ảnh</button>
+    <div class="modal-btns">
+      <button onclick="cancelCI()">Hủy</button>
+      <button class="confirm" id="btn-confirm-ci" onclick="confirmCheckin()">✓ Check in</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <span class="lightbox-close">✕</span>
+  <span class="lb-msg" id="lb-msg"></span>
+  <img id="lb-img" src="" style="display:none" />
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzK8ju660ICzCgnNTiWR2Xl2-Mbap0Og73HbGhi9DruY_HEdZmK_TzY6UHYxZT24yz6/exec';
+
+const SHIFTS = [
+  {code:'S1', label:'S1: 08:30 - 12:00', start:'08:30', end:'12:00'},
+  {code:'S2', label:'S2: 08:30 - 11:00', start:'08:30', end:'11:00'},
+  {code:'S3', label:'S3: 10:00 - 12:00', start:'10:00', end:'12:00'},
+  {code:'TR1',label:'TR1: 12:00 - 14:00',start:'12:00', end:'14:00'},
+  {code:'C1', label:'C1: 14:00 - 18:00', start:'14:00', end:'18:00'},
+  {code:'C2', label:'C2: 13:30 - 17:00', start:'13:30', end:'17:00'},
+  {code:'C3', label:'C3: 15:00 - 18:00', start:'15:00', end:'18:00'},
+  {code:'C4', label:'C4: 16:00 - 18:00', start:'16:00', end:'18:00'},
+  {code:'T1', label:'T1: 18:00 - 22:00', start:'18:00', end:'22:00'},
+  {code:'T2', label:'T2: 18:00 - 21:00', start:'18:00', end:'21:00'},
+  {code:'T3', label:'T3: 19:00 - 21:30', start:'19:00', end:'21:30'},
+  {code:'T4', label:'T4: 19:30 - 22:00', start:'19:30', end:'22:00'},
+];
+const GRACE = 15;
+
+function timeToMins(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function nowMins(){const n=new Date();return n.getHours()*60+n.getMinutes();}
+function evalCheckin(sc){
+  const s=SHIFTS.find(x=>x.code===sc);if(!s)return{status:'ok',diff:0,label:''};
+  const diff=nowMins()-timeToMins(s.start);
+  if(Math.abs(diff)<=GRACE)return{status:'ok',diff,label:''};
+  if(diff>GRACE)return{status:'late',diff,label:`Muộn ${diff} phút`};
+  return{status:'early-in',diff:Math.abs(diff),label:`Sớm ${Math.abs(diff)} phút`};
+}
+function evalCheckout(sc){
+  const s=SHIFTS.find(x=>x.code===sc);if(!s)return{status:'ok',diff:0,label:''};
+  const diff=nowMins()-timeToMins(s.end);
+  if(Math.abs(diff)<=GRACE)return{status:'ok',diff,label:''};
+  if(diff<-GRACE)return{status:'early-out',diff:Math.abs(diff),label:`Về sớm ${Math.abs(diff)} phút`};
+  return{status:'late-out',diff,label:`Tăng ca ${diff} phút`};
+}
+
+// ── STATE ─────────────────────────────────────────────────────
+let ctvs=[], logs=[], schedule={};
+let logFilter='all', pendingCIid=null, capturedPhoto=null, camStream=null;
+let parsedSchedule=null;
+const photoCache={};
+
+document.getElementById('topdate').textContent=new Date().toLocaleDateString('vi-VN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// ── API CALL ──────────────────────────────────────────────────
+function setSyncStatus(state, msg){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  dot.className='sync-dot '+state;
+  lbl.textContent=msg;
+}
+
+async function api(params){
+  const qs=new URLSearchParams(params).toString();
+  let res;
+  try{
+    if(API.length+qs.length>1800) res=await fetch(API,{method:'POST',body:new URLSearchParams(params),redirect:'follow'});
+    else res=await fetch(API+'?'+qs,{redirect:'follow'});
+  }
+  catch(e){throw new Error(params.action+': không gọi được server (mạng/CORS/quyền truy cập)');}
+  const text=await res.text();
+  let data;
+  try{data=JSON.parse(text);}
+  catch(e){throw new Error(params.action+': phản hồi không phải JSON (HTTP '+res.status+')');}
+  if(data.error) throw new Error(params.action+': '+data.error);
+  return data;
+}
+
+// Load lần đầu: CTV + lịch phân ca (không load log để nhanh hơn)
+async function loadAll(){
+  setSyncStatus('loading','Đang tải...');
+  const [r1,r2]=await Promise.allSettled([
+    api({action:'getCTVs'}),
+    api({action:'getSchedule'}),
+  ]);
+  const errs=[];
+  if(r1.status==='fulfilled')ctvs=r1.value.ctvs||[];else errs.push(r1.reason.message);
+  if(r2.status==='fulfilled')schedule=r2.value.schedule||{};else errs.push(r2.reason.message);
+  renderCheckin(); updateStats(); renderManage(); renderSchedule();
+  if(errs.length){
+    console.error(errs);
+    setSyncStatus('err','Lỗi: '+errs[0]);
+    document.getElementById('list-checkin').innerHTML='<div class="empty" style="color:#dc2626">'+errs.join('<br>')+'</div>';
+  }else{
+    setSyncStatus('ok','Đã tải '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}));
+    api({action:'getLogs'}).then(r=>{logs=r.logs||[];updateStats();renderLog();}).catch(e=>console.error(e));
+  }
+}
+
+// Làm mới lịch sử + cập nhật lịch phân ca (dùng khi sang ngày mới)
+async function refreshLog(){
+  setSyncStatus('loading','Đang tải lịch sử...');
+  document.getElementById('log-list').innerHTML='<div class="loading">Đang tải...</div>';
+  try{
+    const [r1,r2,r3]=await Promise.all([
+      api({action:'getCTVs'}),
+      api({action:'getSchedule'}),
+      api({action:'getLogs'}),
+    ]);
+    ctvs=r1.ctvs||[];
+    schedule=r2.schedule||{};
+    logs=r3.logs||[];
+    setSyncStatus('ok','Đã cập nhật '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}));
+    renderLog(); renderCheckin(); updateStats(); renderSchedule();
+  }catch(e){
+    console.error(e);
+    setSyncStatus('err','Lỗi: '+e.message);
+    document.getElementById('log-list').innerHTML='<div class="empty" style="color:#dc2626">'+e.message+'</div>';
+  }
+}
+
+// ── UTILS ─────────────────────────────────────────────────────
+function initials(n){return n.trim().split(' ').slice(-2).map(w=>w[0].toUpperCase()).join('');}
+function fmt(ts){if(!ts)return'';return new Date(ts).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'});}
+function p2(n){return String(n).padStart(2,'0');}
+function dmy(d){return p2(d.getDate())+'/'+p2(d.getMonth()+1)+'/'+d.getFullYear();}
+function fmtFull(ts){if(!ts)return'';const d=new Date(ts);return dmy(d)+' '+p2(d.getHours())+':'+p2(d.getMinutes());}
+function todayStr(){return dmy(new Date());}
+
+// ── TABS ──────────────────────────────────────────────────────
+const ADMIN_PASS = 'admin123'; // ← Đổi mật khẩu tại đây
+let adminUnlocked = false;
+
+function switchTab(t){
+  if((t==='manage' || t==='schedule') && !adminUnlocked){
+    const input = prompt('🔒 Nhập mật khẩu quản trị:');
+    if(input === null) return;
+    if(input !== ADMIN_PASS){
+      alert('\u274c Sai mật khẩu!');
+      return;
+    }
+    adminUnlocked = true;
+  }
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['checkin','log','schedule','manage'][i]===t));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('show'));
+  document.getElementById('sec-'+t).classList.add('show');
+  if(t==='checkin'){renderCheckin();updateStats();}
+  if(t==='log')renderLog();
+  if(t==='schedule')renderSchedule();
+  if(t==='manage')renderManage();
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function updateStats(){
+  document.getElementById('cnt-online').textContent=ctvs.filter(c=>c.status==='online').length;
+  document.getElementById('cnt-total').textContent=ctvs.length;
+  const today=todayStr();
+  document.getElementById('cnt-today').textContent=logs.filter(l=>l.type==='in'&&String(l.ts||'').startsWith(today)).length;
+}
+
+// ── CHECK IN/OUT LIST ─────────────────────────────────────────
+function getTodayShiftsFor(username){
+  const today=todayStr();
+  const dayData=schedule[today];
+  if(!dayData)return[];
+  const u=username.toLowerCase();
+  return Object.keys(dayData).filter(sc=>dayData[sc].includes(u));
+}
+
+function renderCheckin(){
+  const q=(document.getElementById('search-ci').value||'').toLowerCase();
+  const today=todayStr();
+  const dayData=schedule[today]||{};
+  const schedMap={};
+  for(const sc of Object.keys(dayData))
+    for(const u of dayData[sc]){if(!schedMap[u])schedMap[u]=[];schedMap[u].push(sc);}
+
+  const list=ctvs.filter(c=>c.name.toLowerCase().includes(q)||c.username.toLowerCase().includes(q));
+  list.sort((a,b)=>(schedMap[a.username?.toLowerCase()]?.length>0?0:1)-(schedMap[b.username?.toLowerCase()]?.length>0?0:1));
+
+  const el=document.getElementById('list-checkin');
+  if(!list.length){el.innerHTML='<div class="empty">Không tìm thấy CTV</div>';return;}
+
+  el.innerHTML=list.map(c=>{
+    const todayShifts=schedMap[c.username?.toLowerCase()]||[];
+    const shiftBadges=todayShifts.map(sc=>{
+      const s=SHIFTS.find(x=>x.code===sc);
+      return `<span class="schedule-badge">${sc}${s?' '+s.start+'–'+s.end:''}</span>`;
+    }).join(' ');
+
+    let tagHtml='',extraClass='';
+    if(c.status==='online'&&c.lastEvalIn){
+      const ev=c.lastEvalIn;
+      if(ev.status==='late'){tagHtml=`<span class="time-tag tag-red">🔴 ${ev.label}</span>`;extraClass='late';}
+      else if(ev.status==='early-in'){tagHtml=`<span class="time-tag tag-green">🟢 ${ev.label}</span>`;extraClass='early-in';}
+    }
+
+    const subLine=c.status==='online'
+      ?`<span>Vào: ${fmt(c.checkInTime)} · ${c.currentShift||''}</span>`
+      :todayShifts.length>0?shiftBadges:'<span style="color:#bbb">Không có ca hôm nay</span>';
+
+    return `<div class="card ${extraClass}">
+      <div class="row">
+        <div class="name-badge">
+          <div class="avatar">${initials(c.name)}</div>
+          <div style="min-width:0">
+            <div class="ctv-name">${c.name} <span style="font-size:11px;color:#bbb;font-weight:400">${c.username}</span></div>
+            <div class="ctv-sub">${subLine}${tagHtml}</div>
+          </div>
+        </div>
+        <div class="right-col">
+          <span class="status-badge ${c.status==='online'?'online':'offline'}">${c.status==='online'?'● Online':'○ Offline'}</span>
+          <button class="btn-ci ${c.status==='online'?'out':'in'}" onclick="handleBtn('${c.id}')">
+            ${c.status==='online'?'Check out':'Check in'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateStats();
+}
+
+function handleBtn(id){
+  const c=ctvs.find(x=>String(x.id)===String(id));
+  if(!c)return;
+  if(c.status==='offline')openCIModal(id);
+  else doCheckOut(id);
+}
+
+async function doCheckOut(id){
+  const c=ctvs.find(x=>String(x.id)===String(id));
+  const ev=evalCheckout(c.currentShift||'');
+  const now=new Date();
+  const tsStr=fmtFull(now);
+
+  // Optimistic UI
+  c.status='offline'; c.checkInTime=null; c.lastEvalIn=null;
+  renderCheckin();
+  setSyncStatus('loading','Đang ghi...');
+
+  try{
+    await api({
+      action:'addLog',
+      ctvId:c.id, name:c.name, username:c.username,
+      type:'out', ts:tsStr, shift:c.currentShift||'',
+      eval:JSON.stringify(ev), hasPhoto:'false'
+    });
+    c.currentShift=null;
+    setSyncStatus('ok','Đã lưu '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}));
+    // refresh logs
+    const r=await api({action:'getLogs'}); logs=r.logs||[]; renderLog();
+  }catch(e){setSyncStatus('err','Lỗi ghi dữ liệu');}
+}
+
+// ── MODAL CHECK IN ────────────────────────────────────────────
+function openCIModal(id){
+  const c=ctvs.find(x=>String(x.id)===String(id));
+  pendingCIid=id; capturedPhoto=null; resetPhotoArea();
+  document.getElementById('ci-who-label').innerHTML='CTV: <strong>'+c.name+'</strong> ('+c.username+')';
+  const todayShifts=getTodayShiftsFor(c.username);
+  const sel=document.getElementById('ci-shift-select');
+  if(todayShifts.length>0){
+    sel.innerHTML=todayShifts.map(sc=>{const s=SHIFTS.find(x=>x.code===sc);return`<option value="${sc}">${s?s.label:sc}</option>`;}).join('');
+  }else{
+    sel.innerHTML=SHIFTS.map(s=>`<option value="${s.code}">${s.label}</option>`).join('');
+  }
+  updateShiftInfo();
+  document.getElementById('modal-ci').classList.add('open');
+}
+
+function updateShiftInfo(){
+  const s=SHIFTS.find(x=>x.code===document.getElementById('ci-shift-select').value);
+  document.getElementById('ci-shift-info').textContent=s?`⏰ ${s.start} – ${s.end}`:'';
+}
+
+async function confirmCheckin(){
+  if(!capturedPhoto){alert('Vui lòng chụp hoặc chọn ảnh minh chứng.');return;}
+  const c=ctvs.find(x=>String(x.id)===String(pendingCIid));
+  const shiftCode=document.getElementById('ci-shift-select').value;
+  const ev=evalCheckin(shiftCode);
+  const now=new Date();
+  const tsStr=fmtFull(now);
+  const photo=await shrinkImage(capturedPhoto);
+
+  // Optimistic UI
+  c.status='online'; c.checkInTime=now.toISOString(); c.currentShift=shiftCode; c.lastEvalIn=ev;
+  closeModals(); renderCheckin();
+  setSyncStatus('loading','Đang ghi...');
+
+  try{
+    const res=await api({
+      action:'addLog',
+      ctvId:c.id, name:c.name, username:c.username,
+      type:'in', ts:tsStr, shift:shiftCode,
+      eval:JSON.stringify(ev), hasPhoto:'true', photo:photo
+    });
+    if(res.photoId) photoCache[res.photoId]=photo;
+    if(res.photoError) alert('Đã ghi check in nhưng KHÔNG lưu được ảnh: '+res.photoError);
+    setSyncStatus('ok','Đã lưu '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}));
+    const r=await api({action:'getLogs'}); logs=r.logs||[]; renderLog();
+  }catch(e){setSyncStatus('err','Lỗi ghi dữ liệu');}
+}
+
+// Thu nhỏ ảnh (tối đa 1024px) trước khi gửi để upload nhanh và nhẹ
+function shrinkImage(dataUrl,maxSide=1024,quality=.7){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const k=Math.min(1,maxSide/Math.max(img.width,img.height));
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(img.width*k);cv.height=Math.round(img.height*k);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      resolve(cv.toDataURL('image/jpeg',quality));
+    };
+    img.onerror=()=>resolve(dataUrl);
+    img.src=dataUrl;
+  });
+}
+
+// Xem ảnh check in (tải từ Drive khi bấm, có cache)
+async function openPhoto(id){
+  const lb=document.getElementById('lightbox'),img=document.getElementById('lb-img'),msg=document.getElementById('lb-msg');
+  lb.classList.add('open');
+  if(photoCache[id]){msg.textContent='';img.src=photoCache[id];img.style.display='block';return;}
+  img.style.display='none';msg.textContent='Đang tải ảnh...';
+  try{
+    const r=await api({action:'getPhoto',id:id});
+    photoCache[id]=r.photo;
+    if(!lb.classList.contains('open'))return;
+    msg.textContent='';img.src=r.photo;img.style.display='block';
+  }catch(e){msg.textContent='Không tải được ảnh: '+e.message;}
+}
+
+// Camera helpers
+async function startCamera(){
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const vid=document.getElementById('cam-video');
+    vid.srcObject=camStream;vid.style.display='block';
+    document.getElementById('ph-placeholder').style.display='none';
+    document.getElementById('ph-preview').style.display='none';
+    document.getElementById('btn-snap').style.display='block';
+    document.getElementById('btn-open-cam').style.display='none';
+  }catch(e){alert('Không mở được camera.');}
+}
+function snapPhoto(){
+  const vid=document.getElementById('cam-video');
+  const cv=document.createElement('canvas');cv.width=vid.videoWidth;cv.height=vid.videoHeight;
+  cv.getContext('2d').drawImage(vid,0,0);
+  capturedPhoto=cv.toDataURL('image/jpeg',.7);showPreview(capturedPhoto);stopCamera();
+}
+function fileSelected(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{capturedPhoto=ev.target.result;showPreview(capturedPhoto);};r.readAsDataURL(f);
+}
+function showPreview(src){
+  document.getElementById('ph-preview').src=src;document.getElementById('ph-preview').style.display='block';
+  document.getElementById('ph-placeholder').style.display='none';
+  document.getElementById('cam-video').style.display='none';
+  document.getElementById('btn-snap').style.display='none';
+  document.getElementById('btn-open-cam').style.display='';
+}
+function stopCamera(){if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}}
+function resetPhotoArea(){
+  stopCamera();
+  document.getElementById('ph-placeholder').style.display='flex';
+  document.getElementById('cam-video').style.display='none';
+  document.getElementById('ph-preview').style.display='none';
+  document.getElementById('ph-preview').src='';
+  document.getElementById('btn-snap').style.display='none';
+  document.getElementById('btn-open-cam').style.display='';
+  document.getElementById('inp-file').value='';
+}
+function cancelCI(){stopCamera();closeModals();}
+
+// ── LỊCH SỬ ──────────────────────────────────────────────────
+function renderLog(){
+  let list=logFilter==='all'?logs:logFilter==='issue'?logs.filter(l=>l.eval&&l.eval.status!=='ok'):logs.filter(l=>l.type===logFilter);
+  const el=document.getElementById('log-list');
+  if(!list.length){el.innerHTML='<div class="empty">Chưa có lịch sử</div>';return;}
+  el.innerHTML=list.slice(0,100).map(l=>{
+    let evalTag='',leClass='';
+    if(l.eval&&l.eval.status!=='ok'){
+      if(l.eval.status==='late'||l.eval.status==='early-out'){evalTag=`<span class="time-tag tag-red">🔴 ${l.eval.label}</span>`;leClass='le-red';}
+      else{evalTag=`<span class="time-tag tag-green">🟢 ${l.eval.label}</span>`;leClass='le-green';}
+    }
+    return `<div class="log-entry ${leClass}">
+      <div style="flex:1;min-width:0">
+        <div class="log-name">${l.name} ${l.shift?`<span style="font-size:11px;color:#999">${l.shift}</span>`:''}
+        </div>
+        <div class="log-time">${l.ts||''}</div>
+        ${evalTag}
+      </div>
+      ${l.photoId?`<button class="photo-btn" onclick="openPhoto('${l.photoId}')">📷 Xem ảnh</button>`:''}
+      <span class="log-type ${l.type==='in'?'log-in':'log-out'}">${l.type==='in'?'Check in':'Check out'}</span>
+    </div>`;
+  }).join('');
+}
+function filterLog(type,btn){
+  logFilter=type;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderLog();
+}
+
+// ── PHÂN CA IMPORT ────────────────────────────────────────────
+function parseShiftCode(cell){if(!cell)return null;const m=cell.match(/^(S[1-3]|TR1|C[1-4]|T[1-4])\b/i);return m?m[1].toUpperCase():null;}
+function parseDateCell(cell){if(!cell)return null;const m=cell.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(!m)return null;return`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3]}`;}
+
+function parseScheduleText(raw){
+  const result={};let curDate=null,curShift=null;
+  for(const line of raw.split('\n')){
+    const cols=line.split('\t').map(c=>c.trim());
+    const c0=cols[0]||'',c1=cols[1]||'',c2=cols[2]||'';
+    const d=parseDateCell(c0);if(d)curDate=d;
+    const sc=parseShiftCode(c1);if(sc)curShift=sc;
+    let username='';
+    if(c2)username=c2.toLowerCase().trim();
+    else if(c1&&!sc)username=c1.toLowerCase().trim();
+    if(username&&curDate&&curShift){
+      if(!result[curDate])result[curDate]={};
+      if(!result[curDate][curShift])result[curDate][curShift]=[];
+      if(!result[curDate][curShift].includes(username))result[curDate][curShift].push(username);
+    }
+  }
+  return result;
+}
+
+function previewSchedule(){
+  const raw=document.getElementById('paste-area').value;
+  const preview=document.getElementById('import-preview');
+  const btnApply=document.getElementById('btn-apply-import');
+  if(!raw.trim()){preview.innerHTML='';btnApply.style.display='none';parsedSchedule=null;return;}
+  parsedSchedule=parseScheduleText(raw);
+  const dates=Object.keys(parsedSchedule).sort();
+  if(!dates.length){preview.innerHTML='<div style="font-size:12px;color:#dc2626">Không nhận diện được dữ liệu.</div>';btnApply.style.display='none';return;}
+  const knownUsernames=new Set(ctvs.map(c=>c.username.toLowerCase()));
+  let totalOk=0,totalWarn=0;
+  let html=dates.map(date=>{
+    const rows=Object.keys(parsedSchedule[date]).map(sc=>parsedSchedule[date][sc].map(u=>{
+      const known=knownUsernames.has(u);
+      if(known)totalOk++;else totalWarn++;
+      return`<div class="preview-row"><span class="preview-shift">${sc}</span><span>${u}</span>${!known?'<span class="preview-warn">⚠ Chưa có trong DS</span>':''}</div>`;
+    }).join('')).join('');
+    return`<div class="preview-day"><div class="preview-day-title">📅 ${date}</div>${rows}</div>`;
+  }).join('');
+  preview.innerHTML=`<div style="font-size:12px;color:#666;margin-bottom:.6rem"><strong>${totalOk}</strong> lượt hợp lệ${totalWarn?`, <span style="color:#dc2626">${totalWarn} chưa có trong DS</span>`:''}</div>`+html;
+  btnApply.style.display=totalOk>0?'':'none';
+}
+
+async function applySchedule(){
+  if(!parsedSchedule)return;
+  setSyncStatus('loading','Đang lưu lịch...');
+  try{
+    await api({action:'saveSchedule',data:JSON.stringify(parsedSchedule)});
+    // merge local
+    for(const date of Object.keys(parsedSchedule)){schedule[date]=parsedSchedule[date];}
+    setSyncStatus('ok','Đã lưu lịch');
+    clearImport(); renderSchedule(); renderCheckin();
+    alert('✅ Đã áp dụng và lưu lịch phân ca lên Google Sheets!');
+  }catch(e){setSyncStatus('err','Lỗi lưu lịch');}
+}
+
+function clearImport(){
+  document.getElementById('paste-area').value='';
+  document.getElementById('import-preview').innerHTML='';
+  document.getElementById('btn-apply-import').style.display='none';
+  parsedSchedule=null;
+}
+
+function renderSchedule(){
+  const el=document.getElementById('schedule-display');
+  const dates=Object.keys(schedule).sort();
+  if(!dates.length){el.innerHTML='<div class="empty">Chưa có lịch nào.</div>';return;}
+  const today=todayStr();
+  el.innerHTML=dates.map(date=>{
+    const isToday=date===today;
+    const rows=Object.keys(schedule[date]).map(sc=>{
+      const s=SHIFTS.find(x=>x.code===sc);
+      return`<div class="shift-row"><span class="shift-code">${sc}</span><span class="shift-times">${s?s.start+'–'+s.end:''}</span><span style="font-size:12px;color:#444">${schedule[date][sc].join(', ')}</span></div>`;
+    }).join('');
+    return`<div style="margin-bottom:.85rem"><div style="font-size:12px;font-weight:500;margin-bottom:.4rem;color:${isToday?'#16a34a':'#666'}">${isToday?'📍 ':''}${date}${isToday?' – Hôm nay':''}</div>${rows}</div>`;
+  }).join('');
+}
+
+// ── QUẢN LÝ CTV ──────────────────────────────────────────────
+function renderManage(){
+  const q=(document.getElementById('search-mgr').value||'').toLowerCase();
+  const list=ctvs.filter(c=>c.name.toLowerCase().includes(q)||c.username.toLowerCase().includes(q));
+  const el=document.getElementById('list-manage');
+  if(!list.length){el.innerHTML='<div class="empty">Không tìm thấy CTV</div>';return;}
+  el.innerHTML=list.map(c=>`
+    <div class="card">
+      <div class="row">
+        <div class="name-badge">
+          <div class="avatar">${initials(c.name)}</div>
+          <div><div class="ctv-name">${c.name}</div><div class="ctv-sub">@${c.username} · ${c.email?c.email:'<span style="color:#dc2626">chưa có email</span>'}</div></div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="photo-btn" onclick="editEmail('${c.id}')">✉ Email</button>
+          <button class="del-btn" onclick="deleteCtv('${c.id}')">Xóa</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openAddModal(){document.getElementById('modal-add').classList.add('open');setTimeout(()=>document.getElementById('inp-name').focus(),100);}
+
+async function addCtv(){
+  const name=document.getElementById('inp-name').value.trim();
+  const username=document.getElementById('inp-username').value.trim().toLowerCase();
+  const email=document.getElementById('inp-email').value.trim();
+  if(!name||!username){alert('Vui lòng điền đủ Tên và Username.');return;}
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert('Email không hợp lệ.');return;}
+  setSyncStatus('loading','Đang thêm...');
+  try{
+    const r=await api({action:'addCTV',name,username,email});
+    ctvs.push({id:r.id,name,username,email,status:'offline',checkInTime:null,currentShift:null,lastEvalIn:null});
+    closeModals(); renderManage(); updateStats();
+    setSyncStatus('ok','Đã thêm CTV');
+  }catch(e){setSyncStatus('err','Lỗi thêm CTV: '+e.message);alert(e.message);}
+}
+
+async function editEmail(id){
+  const c=ctvs.find(x=>String(x.id)===String(id));if(!c)return;
+  const v=prompt('Email nhận cảnh báo của '+c.name+' (để trống để xóa):',c.email||'');
+  if(v===null)return;
+  const email=v.trim();
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert('Email không hợp lệ.');return;}
+  setSyncStatus('loading','Đang lưu email...');
+  try{
+    await api({action:'setCTVEmail',id:c.id,email});
+    c.email=email;renderManage();
+    setSyncStatus('ok','Đã lưu email');
+  }catch(e){setSyncStatus('err','Lỗi lưu email');alert(e.message);}
+}
+
+async function deleteCtv(id){
+  if(!confirm('Xóa CTV này?'))return;
+  setSyncStatus('loading','Đang xóa...');
+  try{
+    await api({action:'deleteCTV',id});
+    ctvs=ctvs.filter(c=>String(c.id)!==String(id));
+    renderManage(); updateStats();
+    setSyncStatus('ok','Đã xóa');
+  }catch(e){setSyncStatus('err','Lỗi xóa');}
+}
+
+function closeModals(){
+  document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'));
+  document.getElementById('inp-name').value='';
+  document.getElementById('inp-username').value='';
+  document.getElementById('inp-email').value='';
+  pendingCIid=null; capturedPhoto=null;
+}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',function(e){if(e.target===this){stopCamera();closeModals();}}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){stopCamera();closeModals();document.getElementById('lightbox').classList.remove('open');}});
+
+loadAll();
+</script>
+</body>
+</html>
